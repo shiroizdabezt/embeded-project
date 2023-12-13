@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Line Chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <style>
+        #chart-container {
+            margin: 40px 20px 0px 40px;
+            /* Căn biểu đồ bên trái */
+            width: 40%;
+            /* Đặt chiều rộng tùy thuộc vào nhu cầu của bạn */
+            float: left;
+            /* Đặt biểu đồ bên trái */
+        }
+
+        #chart-container2 {
+            margin: 40px 40px 0px 20px;
+            /* Căn biểu đồ bên phải */
+            width: 40%;
+            /* Đặt chiều rộng tùy thuộc vào nhu cầu của bạn */
+            float: right;
+            /* Đặt biểu đồ bên phải */
+        }
+
+        .devices-name {
+            margin: 30px 0px 0px 47%;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        /* Hide default HTML checkbox */
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* The slider */
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            -webkit-transition: .4s;
+            transition: .4s;
+        }
+
+        input:checked+.slider {
+            background-color: #2196F3;
+        }
+
+        input:focus+.slider {
+            box-shadow: 0 0 1px #2196F3;
+        }
+
+        input:checked+.slider:before {
+            -webkit-transform: translateX(26px);
+            -ms-transform: translateX(26px);
+            transform: translateX(26px);
+        }
+
+        /* Rounded sliders */
+        .slider.round {
+            border-radius: 34px;
+        }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+
+        .switch-container {
+            clear: both;
+            /* Đảm bảo không có phần nào chồng lên container */
+            text-align: left;
+            /* Căn giữa theo chiều ngang */
+            margin-top: 20px;
+            margin-left: 30px;
+            /* Khoảng cách từ container đến biểu đồ */
+        }
+
+        /* Các thuộc tính khác của nút switch */
+        .switch {
+            display: inline-block;
+            margin: 0 10px;
+            /* Khoảng cách giữa các nút */
+        }
+
+        .button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+        }
+    </style>
+
+</head>
+
+<body>
+    <form class="devices-name" name="form1" id="form1">
+        Devices: <select name="ipaddr" id="devices">
+        </select>
+    </form>
+
+    <div id="chart-container">
+        <canvas id="lineChart" width="800" height="400"></canvas>
+        <p style="font:bold ; font-size: 30px; float: left;">
+            Control switch
+        </p>
+    </div>
+
+    <div id="chart-container2">
+        <canvas id="lineChart2" width="800" height="400"></canvas>
+
+        <p style="font:bold ; font-size: 30px; float: right;">
+            Details
+        </p>
+    </div>
+
+
+
+    <div class="switch-container">
+
+        <hr width="35%" align="left">
+        <hr width="35%" align="right">
+        <div class="detail" style="width: 100px; height: 100px; border: 2px black dashed; float: right;">
+            a
+        </div>
+        <p style="font: bold;">
+            Curtain
+        </p>
+        <label class="switch">
+            <input type="checkbox">
+            <span class="slider round"></span>
+        </label>
+    </div>
+
+    <script>
+        var selectElement = document.getElementById("devices");
+        var selectedDevice = selectElement.value;
+        selectElement.addEventListener("change", function () {
+            // Lấy giá trị được chọn
+            selectedDevice = selectElement.value;
+
+            tempChart.data.labels = [];
+            tempChart.data.datasets[0].data = [];
+            tempChart.data.datasets[1].data = [];
+
+            uvChart.data.labels = [];
+            uvChart.data.datasets[0].data = [];
+        });
+
+        var list_device = {{ devices| safe}};
+
+        // Lặp qua dữ liệu JSON và chèn các tùy chọn vào danh sách
+        list_device.forEach(function (device) {
+            var option = document.createElement("option");
+            option.value = device['ipaddr'];
+            option.text = device['device_name'];
+            selectElement.add(option);
+        });
+
+        var ctx = document.getElementById('lineChart').getContext('2d');
+        var tempChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'Temperature (°C)',
+                        data: [],
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    },
+                    {
+                        label: 'Humidity (%)',
+                        data: [],
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                maintainAspectRatio: true,
+                scales: {
+                    x: [{
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            autoSkip: true,
+                            parser: 'YYYY-MM-DDTHH:mm:ss.SSSZ',
+                            tooltipFormat: 'll HH:mm:ss',
+
+                        },
+                        ticks: {
+                            maxRotation: 90, // Góc xoay tối đa của nhãn
+                            autoSkip: true,
+                            maxTicksLimit: 10, // Giới hạn tối đa số lượng nhãn
+                        },
+                    }],
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+
+        var ctx2 = document.getElementById('lineChart2').getContext('2d');
+        var uvChart = new Chart(ctx2, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [
+                    {
+                        label: 'UV Level',
+                        data: [],
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        fill: false
+                    },
+                ]
+            },
+            options: {
+                maintainAspectRatio: true,
+                scales: {
+                    x: [{
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            autoSkip: true,
+                            parser: 'YYYY-MM-DDTHH:mm:ss.SSSZ',
+                            tooltipFormat: 'll HH:mm:ss',
+
+                        },
+                        ticks: {
+                            maxRotation: 90, // Góc xoay tối đa của nhãn
+                            autoSkip: true,
+                            maxTicksLimit: 10, // Giới hạn tối đa số lượng nhãn
+                        },
+                    }],
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        function fetchData() {
+            var selectElement = document.getElementById("devices");
+            var selectedDevice = selectElement.value;
+            var url = '/data/?ipaddr=' + selectedDevice;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    // Update chart data
+                    tempChart.data.labels.push(data.timestamps);
+                    tempChart.data.datasets[0].data.push(data.temperatures);
+                    tempChart.data.datasets[1].data.push(data.humidities);
+
+                    uvChart.data.labels.push(data.timestamps);
+                    uvChart.data.datasets[0].data.push(data.uvLevel);
+
+                    // Giữ lại chỉ 60 phần tử
+                    if (tempChart.data.labels.length > 20) {
+                        tempChart.data.labels.shift();
+                        tempChart.data.datasets[0].data.shift();
+                        tempChart.data.datasets[1].data.shift();
+
+                        uvChart.data.labels.shift();
+                        uvChart.data.datasets[0].data.shift();
+                    }
+
+                    if (uvChart.data.labels.length > 20) {
+                        uvChart.data.labels.shift();
+                        uvChart.data.datasets[0].data.shift();
+                    }
+
+                    
+                    // Cập nhật biểu đồ
+                    tempChart.update();
+
+                    uvChart.update();
+                });
+
+            // Thực hiện lại sau mỗi giây
+            setTimeout(fetchData, 2000);
+        }
+
+
+        $(document).ready(function () {
+            $('.switch input').change(function () {
+                var lightStatus = $(this).is(':checked') ? '1' : '0';
+
+                // Gửi yêu cầu điều khiển đèn tới server Django
+                $.ajax({
+                    url: '/control_light/',
+                    type: 'GET',
+                    data: {
+                        'light_status': lightStatus
+                    },
+                    success: function (response) {
+                        console.log('Light control success');
+                    },
+                    error: function (xhr) {
+                        console.error('Failed to control light');
+                    }
+                });
+            });
+        });
+
+
+        // Bắt đầu fetch dữ liệu
+        fetchData();
+
+
+        $(document).ready(function () {
+            // Xử lý sự kiện khi switch container thay đổi
+            $('.switch-container').each(function () {
+                const $switch = $(this).find('.switch input');
+                const controlId = $switch.attr('id'); // Lấy ID của switch container để xác định thiết bị
+
+                $switch.change(function () {
+                    const status = $(this).is(':checked') ? '1' : '0';
+
+                    // Gửi yêu cầu điều khiển thiết bị tương ứng tới server Django
+                    sendDeviceCommand(controlId, status);
+                });
+            });
+
+            // Hàm gửi yêu cầu điều khiển thiết bị tới server
+            function sendDeviceCommand(deviceId, status) {
+                const xhr = new XMLHttpRequest();
+                xhr.open("GET", `http://${selectedDevice}/${status}`, true);
+
+                xhr.onload = function () {
+                    if (xhr.status === 200) {
+                        console.log("Request sent successfully");
+                    } else {
+                        console.log("Failed to send request");
+                    }
+                };
+
+                xhr.send();
+            }
+        });
+
+
+    </script>
+
+    <h1></h1>
+</body>
+
+</html>
