@@ -11,7 +11,7 @@
 
 const char* ssid = "KhueTorres"; // Tên WiFi
 const char* password = "04021995"; // Mật khẩu WiFi
-const char* serverAddress = "192.168.100.4"; // Địa chỉ server Django
+const char* serverAddress = "192.168.100.9"; // Địa chỉ server Django
 IPAddress IP;
 
 ESP8266WebServer server(80);

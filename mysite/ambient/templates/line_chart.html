@@ -102,8 +102,24 @@
             /* Khoảng cách từ container đến biểu đồ */
         }
 
+        .switch-container-Auto {
+            clear: both;
+            /* Đảm bảo không có phần nào chồng lên container */
+            text-align: left;
+            /* Căn giữa theo chiều ngang */
+            margin-top: 20px;
+            margin-left: 30px;
+            /* Khoảng cách từ container đến biểu đồ */
+        }
+
         /* Các thuộc tính khác của nút switch */
         .switch {
+            display: inline-block;
+            margin: 0 10px;
+            /* Khoảng cách giữa các nút */
+        }
+
+        .switchAuto {
             display: inline-block;
             margin: 0 10px;
             /* Khoảng cách giữa các nút */
@@ -148,7 +164,7 @@
         <hr width="35%" align="right">
         <div class="detail" style="width: 600px; height: 100px; float: right; margin-right: 40px; font-size: 30px;">
             <p id="timestamp">
-                Timestamp: 
+                Timestamp:
             </p>
             <p id="temperature">
                 Temperature:
@@ -164,14 +180,28 @@
             Curtain
         </p>
         <label class="switch">
-            <input type="checkbox">
+            <input type="checkbox" id="light">
             <span class="slider round"></span>
         </label>
+
+        <p style="font: bold; font-size: 30px;">
+            Auto
+        </p>
+        <label class="switch switchAuto">
+            <input type="checkbox" id="autoCheckbox">
+            <span class="slider round"></span>
+        </label>
+
     </div>
+
+
 
     <script>
         var selectElement = document.getElementById("devices");
         var selectedDevice = selectElement.value;
+        var isActive = 0;
+
+
         selectElement.addEventListener("change", function () {
             // Lấy giá trị được chọn
             selectedDevice = selectElement.value;
@@ -318,6 +348,7 @@
                     document.getElementById("humidity").innerText = "Humidity: " + data.humidities[1] + "%";
                     document.getElementById("uv-level").innerText = "UV Level: " + data.uvLevel[1];
 
+                    AutoLight(isActive, data.temperatures[1]);
 
                     // Cập nhật biểu đồ
                     tempChart.update();
@@ -328,6 +359,28 @@
             // Thực hiện lại sau mỗi giây
             setTimeout(fetchData, 2000);
         }
+
+
+        function AutoLight(control, data) {
+            if (control == 0)
+                return;
+            const $switch = $('#light'); 
+            if (data >= 30) {
+                $switch.prop('checked', true); // Đánh dấu checkbox khi nhiệt độ lớn hơn hoặc bằng 20
+                $switch.trigger('change'); // Kích hoạt sự kiện change để gửi yêu cầu điều khiển
+            }
+            else if (data <= 27) {
+                $switch.prop('checked', false); // Đánh dấu checkbox khi nhiệt độ lớn hơn hoặc bằng 20
+                $switch.trigger('change'); // Kích hoạt sự kiện change để gửi yêu cầu điều khiển
+            }
+        }
+
+        $(document).ready(function () {
+            // Xử lý sự kiện khi checkbox Auto thay đổi
+            $('#autoCheckbox').change(function () {
+                isActive = $(this).is(':checked') ? 1 : 0;
+            });
+        });
 
 
         $(document).ready(function () {
